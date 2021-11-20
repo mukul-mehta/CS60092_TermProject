@@ -68,7 +68,7 @@ SCORERS = [
 SUMMARIZERS = [DefaultSummarizer()]
 
 experiment_time = int(time.time())
-results_path = Path(f"results/exp 8")
+results_path = Path(f"results/")
 
 
 def pick_top_sentences(doc, result):
