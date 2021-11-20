@@ -14,15 +14,19 @@ from hipo_rank.summarizers.default import DefaultSummarizer
 from hipo_rank.evaluators.rouge import evaluate_rouge
 
 from pathlib import Path
-import json
 import time
+import json
 from tqdm import tqdm
+import math
 
 """
 baselines (no hierarchy, lead positional bias) on test sets
 """
 
-DEBUG = True
+DEBUG = False
+
+# What this means is that the top 15% sentences will be chosen for summary
+SUMMARY_SIZE = 0.15
 
 DATASETS = [
     ("legal_india_no_sections", LegalDataset,
@@ -34,7 +38,7 @@ DATASETS = [
 
 ]
 EMBEDDERS = [
-    # ("rand_20", RandEmbedder, {"dim": 20}),
+    ("random_bert", RandEmbedder, {"dim": 768}),
     ("pacsum_bert", BertEmbedder,
      {"bert_config_path": "models/pacssum_models/bert_config.json",
       "bert_model_path": "models/pacssum_models/pytorch_model_finetuned.bin",
@@ -64,7 +68,20 @@ SCORERS = [
 SUMMARIZERS = [DefaultSummarizer()]
 
 experiment_time = int(time.time())
-results_path = Path(f"results/exp8")
+results_path = Path(f"results/exp 8")
+
+
+def pick_top_sentences(doc, result):
+    og_sentences = doc.sections[0].sentences
+    result_sentences = [i[0] for i in result[0]['summary']]
+
+    cutoff = math.ceil(SUMMARY_SIZE * len(og_sentences))
+
+    return {
+        "doc": og_sentences,
+        "summary": result_sentences[:cutoff]
+    }
+
 
 for embedder_id, embedder, embedder_args in EMBEDDERS:
     Embedder = embedder(**embedder_args)
@@ -110,6 +127,10 @@ for embedder_id, embedder, embedder_args in EMBEDDERS:
                             json.dumps(rouge_result, indent=2))
                         (experiment_path /
                          "summaries.json").write_text(json.dumps(results, indent=2))
+
+                        filtered_results = pick_top_sentences(doc, results)
+                        (experiment_path /
+                         "results.json").write_text(json.dumps(filtered_results, indent=2))
                     except FileExistsError:
                         print(f"{experiment} already exists, skipping...")
                         pass
