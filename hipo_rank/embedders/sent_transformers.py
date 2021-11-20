@@ -25,7 +25,3 @@ class SentTransformersEmbedder:
                               for se in sentence_embeddings]
 
         return Embeddings(sentence=sentence_embeddings, section=section_embeddings)
-
-
-
-
